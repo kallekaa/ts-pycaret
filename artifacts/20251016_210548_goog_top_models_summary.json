@@ -1,0 +1,57 @@
+[
+  {
+    "Model": "Croston",
+    "MASE": 1.1438,
+    "RMSSE": 1.1124,
+    "MAE": 9.7653,
+    "RMSE": 11.6799,
+    "MAPE": 0.0586,
+    "SMAPE": 0.0569,
+    "R2": -2.5115,
+    "TT (Sec)": 0.01
+  },
+  {
+    "Model": "Decision Tree w/ Cond. Deseasonalize & Detrending",
+    "MASE": 1.167,
+    "RMSSE": 1.0702,
+    "MAE": 10.0992,
+    "RMSE": 11.3648,
+    "MAPE": 0.0614,
+    "SMAPE": 0.0591,
+    "R2": -3.2833,
+    "TT (Sec)": 0.2267
+  },
+  {
+    "Model": "TBATS",
+    "MASE": 1.1713,
+    "RMSSE": 1.1296,
+    "MAE": 9.9934,
+    "RMSE": 11.8526,
+    "MAPE": 0.0599,
+    "SMAPE": 0.058,
+    "R2": -2.6516,
+    "TT (Sec)": 17.8767
+  },
+  {
+    "Model": "Theta Forecaster",
+    "MASE": 1.2148,
+    "RMSSE": 1.1409,
+    "MAE": 10.348,
+    "RMSE": 11.9384,
+    "MAPE": 0.062,
+    "SMAPE": 0.0597,
+    "R2": -2.8566,
+    "TT (Sec)": 0.0133
+  },
+  {
+    "Model": "Naive Forecaster",
+    "MASE": 1.2309,
+    "RMSSE": 1.1784,
+    "MAE": 10.493,
+    "RMSE": 12.3533,
+    "MAPE": 0.0629,
+    "SMAPE": 0.0607,
+    "R2": -3.0052,
+    "TT (Sec)": 0.7267
+  }
+]

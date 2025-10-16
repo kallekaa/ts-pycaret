@@ -19,7 +19,7 @@ from pycaret.time_series import TSForecastingExperiment
 
 def parse_args() -> argparse.Namespace:
     today = date.today()
-    default_start = date(today.year - 3, 1, 1).isoformat()
+    default_start = date(today.year - 2, 1, 1).isoformat()
     default_end = date(today.year - 1, 12, 31).isoformat()
 
     parser = argparse.ArgumentParser(
@@ -301,6 +301,7 @@ def plot_forecast(
     metrics: dict[str, float],
     forecast_stats: dict[str, float],
     test: Optional[pd.Series] = None,
+    test_predictions: Optional[pd.Series] = None,
 ) -> plt.Figure:
     history = history.sort_index()
     forecast = forecast.sort_index()
@@ -315,6 +316,15 @@ def plot_forecast(
         combined_actuals = pd.concat([history, test]).sort_index()
     else:
         combined_actuals = history
+
+    if test_predictions is not None:
+        test_predictions = test_predictions.sort_index()
+        test_predictions.plot(
+            ax=ax,
+            label="Test prediction",
+            color="#d62728",
+            linestyle="--",
+        )
 
     forecast.plot(ax=ax, label="Forecast", color="#ff7f0e")
 
@@ -469,11 +479,38 @@ def run_experiment(
         else:
             forecast_series = forecast
 
+        test_predictions = None
+        if test_series is not None:
+            try:
+                test_input = test_series.to_frame(name=series_name)
+                test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                if isinstance(test_pred_df, pd.DataFrame):
+                    if "y_pred" in test_pred_df.columns:
+                        test_predictions = test_pred_df["y_pred"]
+                    else:
+                        test_predictions = test_pred_df.iloc[:, 0]
+                elif isinstance(test_pred_df, pd.Series):
+                    test_predictions = test_pred_df
+                if test_predictions is not None:
+                    test_predictions = pd.Series(test_predictions)
+                    if len(test_predictions) != len(test_series):
+                        test_predictions = test_predictions.reindex(test_series.index)
+                    else:
+                        test_predictions.index = test_series.index
+                    test_predictions.name = "y_pred"
+            except Exception:
+                logging.warning("Unable to generate test predictions for %s.", model_label, exc_info=True)
+                test_predictions = None
+
         prediction_path = outputs["predictions"] / f"{file_stem}_forecast.csv"
         if isinstance(forecast, pd.DataFrame):
             forecast.to_csv(prediction_path, index=True)
         else:
             forecast_series.to_frame(name="y_pred").to_csv(prediction_path, index=True)
+
+        if test_predictions is not None:
+            test_pred_path = outputs["predictions"] / f"{file_stem}_test_predictions.csv"
+            test_predictions.to_frame(name="y_pred").to_csv(test_pred_path, index=True)
 
         metrics = extract_numeric_metrics(leaderboard_row)
         forecast_stats = series_descriptive_stats(forecast_series)
@@ -492,6 +529,7 @@ def run_experiment(
             metrics=metrics,
             forecast_stats=forecast_stats,
             test=test_series,
+            test_predictions=test_predictions,
         )
         fig_path = outputs["plots"] / f"{file_stem}_forecast.png"
         fig.savefig(fig_path, dpi=200, bbox_inches="tight")
