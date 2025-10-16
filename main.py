@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -11,30 +12,50 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
+import yfinance as yf
 from pycaret.datasets import get_data
 from pycaret.time_series import TSForecastingExperiment
 
 
 def parse_args() -> argparse.Namespace:
+    today = date.today()
+    default_start = date(today.year - 3, 1, 1).isoformat()
+    default_end = date(today.year - 1, 12, 31).isoformat()
+
     parser = argparse.ArgumentParser(
         description="Run a PyCaret time series experiment and persist the results."
     )
     data_source = parser.add_mutually_exclusive_group()
     data_source.add_argument(
         "--dataset-name",
-        default="airline",
-        help="Name of a PyCaret sample dataset to load (default: airline).",
+        default=None,
+        help="Name of a PyCaret sample dataset to load.",
     )
     data_source.add_argument(
         "--csv-path",
         type=Path,
         help="Path to a CSV file containing the time series.",
     )
+    data_source.add_argument(
+        "--yfinance-ticker",
+        default="GOOG",
+        help="Ticker symbol to download daily closes from Yahoo Finance via yfinance.",
+    )
     parser.add_argument(
         "--time-column",
         help=(
             "Name of the datetime column. Required when using --csv-path with a datetime index."
         ),
+    )
+    parser.add_argument(
+        "--yfinance-start",
+        default=default_start,
+        help="Optional start date (YYYY-MM-DD) when fetching data with --yfinance-ticker.",
+    )
+    parser.add_argument(
+        "--yfinance-end",
+        default=default_end,
+        help="Optional end date (YYYY-MM-DD) when fetching data with --yfinance-ticker.",
     )
     parser.add_argument(
         "--target-column",
@@ -49,8 +70,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--forecast-horizon",
         type=int,
-        default=24,
-        help="Number of future periods to forecast (default: 24).",
+        default=30,
+        help="Number of future periods to forecast (default: 30).",
     )
     parser.add_argument(
         "--folds",
@@ -61,8 +82,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--top-n",
         type=int,
-        default=3,
-        help="Number of top models to report and visualise (default: 3).",
+        default=5,
+        help="Number of top models to report and visualise (default: 5).",
     )
     parser.add_argument(
         "--seasonal-period",
@@ -96,16 +117,35 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def configure_logging() -> None:
+def configure_logging(log_path: Path) -> None:
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    log_path.write_text("", encoding="utf-8")
+    file_handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
+    stream_handler = logging.StreamHandler()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",
+        handlers=[file_handler, stream_handler],
     )
 
 
 def slugify(value: str) -> str:
     return "".join(ch.lower() if ch.isalnum() else "_" for ch in value).strip("_")
+
+
+def resolve_series_name(*series_like: Optional[pd.Series | pd.DataFrame]) -> str:
+    for obj in series_like:
+        if obj is None:
+            continue
+        if isinstance(obj, pd.Series) and obj.name:
+            return str(obj.name)
+        if isinstance(obj, pd.DataFrame) and obj.columns.size == 1:
+            col = obj.columns[0]
+            if isinstance(col, str):
+                return col
+    return "value"
 
 
 def load_series_from_csv(
@@ -142,13 +182,69 @@ def load_series_from_csv(
     return series
 
 
+def load_series_from_yfinance(
+    ticker: str,
+    start: Optional[str],
+    end: Optional[str],
+    frequency: Optional[str],
+) -> pd.Series:
+    params: dict[str, object] = {"interval": "1d", "progress": False, "auto_adjust": False}
+    if start:
+        params["start"] = start
+    if end:
+        params["end"] = end
+    if "start" not in params and "end" not in params:
+        params["period"] = "max"
+    data = yf.download(ticker, **params)
+    if data.empty or "Close" not in data.columns:
+        raise ValueError(f"No closing price data returned for ticker '{ticker}'.")
+    close = data["Close"]
+    if isinstance(close, pd.DataFrame):
+        if close.shape[1] == 1:
+            close = close.iloc[:, 0]
+        else:
+            raise ValueError(
+                "Expected a single Close series but received multiple columns. "
+                "Please request a single ticker."
+            )
+    close.index = pd.to_datetime(close.index).tz_localize(None)
+    close.name = f"{ticker.upper()}_close"
+    if frequency:
+        try:
+            close = close.asfreq(frequency)
+        except Exception as exc:  # pragma: no cover
+            logging.warning("Could not enforce frequency %s: %s", frequency, exc)
+        close = close.ffill()
+    else:
+        inferred = pd.infer_freq(close.index)
+        if inferred:
+            close = close.asfreq(inferred)
+            close = close.ffill()
+        else:
+            close = close.resample("B").ffill()
+    return close
+
+
 def load_time_series(
     dataset_name: Optional[str],
     csv_path: Optional[Path],
+    yfinance_ticker: Optional[str],
+    yfinance_start: Optional[str],
+    yfinance_end: Optional[str],
     time_column: Optional[str],
     target_column: Optional[str],
     frequency: Optional[str],
 ) -> pd.Series:
+    if yfinance_ticker:
+        logging.info(
+            "Downloading daily close prices for %s from Yahoo Finance.", yfinance_ticker
+        )
+        return load_series_from_yfinance(
+            yfinance_ticker,
+            start=yfinance_start,
+            end=yfinance_end,
+            frequency=frequency,
+        )
     if csv_path:
         logging.info("Loading time series from %s", csv_path)
         return load_series_from_csv(csv_path, time_column, target_column, frequency)
@@ -172,8 +268,9 @@ def ensure_output_dirs(base_dir: Path) -> dict[str, Path]:
         "plots": base_dir / "plots",
         "metrics": base_dir / "metrics",
         "predictions": base_dir / "predictions",
+        "logs": base_dir / "logs",
     }
-    for path in outputs.values():
+    for key, path in outputs.items():
         path.mkdir(parents=True, exist_ok=True)
     return outputs
 
@@ -203,30 +300,49 @@ def plot_forecast(
     model_label: str,
     metrics: dict[str, float],
     forecast_stats: dict[str, float],
+    test: Optional[pd.Series] = None,
 ) -> plt.Figure:
     history = history.sort_index()
     forecast = forecast.sort_index()
+    combined_actuals = history
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    history.plot(ax=ax, label="History", color="#1f77b4")
+    history.plot(ax=ax, label="Train", color="#1f77b4")
+
+    if test is not None:
+        test = test.sort_index()
+        test.plot(ax=ax, label="Test", color="#2ca02c")
+        combined_actuals = pd.concat([history, test]).sort_index()
+    else:
+        combined_actuals = history
+
     forecast.plot(ax=ax, label="Forecast", color="#ff7f0e")
 
     try:
-        cutoff = history.index[-1]
+        cutoff = combined_actuals.index[-1]
         ax.axvline(cutoff, linestyle="--", color="gray", linewidth=1, label="Forecast start")
     except Exception:
         logging.debug("Unable to draw forecast cutoff marker.", exc_info=True)
 
+    series_name = history.name or (test.name if test is not None else forecast.name) or "value"
     ax.set_title(f"{model_label} Forecast")
     ax.set_xlabel("Time")
-    ax.set_ylabel(history.name or "value")
-    ax.legend()
+    ax.set_ylabel(series_name)
+    ax.legend(loc="upper left", fontsize="small")
 
     summary_lines = []
     if metrics:
-        summary_lines.append("Metrics:")
-        for name, value in sorted(metrics.items()):
-            summary_lines.append(f"  {name}: {value:,.3f}")
+        desired_metrics = ["MAPE", "RMSE", "R2"]
+        normalized = {name.upper(): (name, value) for name, value in metrics.items()}
+        selected = [
+            normalized[key]
+            for key in desired_metrics
+            if key in normalized
+        ]
+        if selected:
+            summary_lines.append("Metrics:")
+            for name, value in selected:
+                summary_lines.append(f"  {name}: {value:,.3f}")
     if forecast_stats:
         selected_keys = ["mean", "std", "min", "max"]
         available = [k for k in selected_keys if k in forecast_stats]
@@ -237,11 +353,11 @@ def plot_forecast(
 
     if summary_lines:
         ax.text(
-            0.02,
+            0.5,
             0.98,
             "\n".join(summary_lines),
             transform=ax.transAxes,
-            ha="left",
+            ha="center",
             va="top",
             fontsize=8,
             bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
@@ -251,10 +367,21 @@ def plot_forecast(
     return fig
 
 
-def run_experiment(args: argparse.Namespace) -> None:
-    outputs = ensure_output_dirs(args.output_dir)
+def run_experiment(
+    args: argparse.Namespace,
+    outputs: dict[str, Path],
+    run_timestamp: str,
+    series_slug: str,
+) -> None:
     data = load_time_series(
-        args.dataset_name, args.csv_path, args.time_column, args.target_column, args.frequency
+        args.dataset_name,
+        args.csv_path,
+        args.yfinance_ticker,
+        args.yfinance_start,
+        args.yfinance_end,
+        args.time_column,
+        args.target_column,
+        args.frequency,
     )
     logging.info("Fetched %d observations for the experiment.", len(data))
 
@@ -268,6 +395,42 @@ def run_experiment(args: argparse.Namespace) -> None:
         n_jobs=-1,
         verbose=False,
     )
+    train_series_raw = exp.get_config("y_train")
+    test_series_raw = exp.get_config("y_test")
+
+    def _normalize_series(raw):
+        if raw is None:
+            return None
+        if isinstance(raw, pd.Series):
+            return raw
+        if isinstance(raw, pd.DataFrame):
+            if raw.shape[1] == 1:
+                return raw.iloc[:, 0]
+            numeric_cols = raw.select_dtypes(include="number").columns
+            if len(numeric_cols) > 0:
+                logging.warning(
+                    "Multiple columns detected; proceeding with the first numeric column '%s'.",
+                    numeric_cols[0],
+                )
+                return raw[numeric_cols[0]]
+            logging.warning(
+                "Expected a single column time series but received %s columns; unable to select one.",
+                raw.shape[1],
+            )
+            return None
+        logging.warning("Unsupported time series type %s; skipping conversion.", type(raw))
+        return None
+
+    train_series = _normalize_series(train_series_raw)
+    test_series = _normalize_series(test_series_raw)
+    if train_series is None:
+        train_series = _normalize_series(data) or data
+    series_name = resolve_series_name(train_series, test_series, data)
+    if isinstance(train_series, pd.Series):
+        train_series = train_series.rename(series_name)
+    if isinstance(test_series, pd.Series):
+        test_series = test_series.rename(series_name)
+
     logging.info("Comparing models (%s metric)...", args.sort_metric)
     comparison = exp.compare_models(
         n_select=max(1, args.top_n),
@@ -277,20 +440,24 @@ def run_experiment(args: argparse.Namespace) -> None:
     )
     models = comparison if isinstance(comparison, list) else [comparison]
     leaderboard = exp.pull()
-    leaderboard_path = outputs["base"] / "leaderboard.csv"
+    identifier = f"{run_timestamp}_{series_slug}"
+    leaderboard_path = outputs["base"] / f"{identifier}_leaderboard.csv"
     leaderboard.to_csv(leaderboard_path, index=False)
     logging.info("Leaderboard written to %s", leaderboard_path)
 
     top_rows = leaderboard.head(len(models)).copy()
-    top_summary_path = outputs["base"] / "top_models_summary.csv"
+    top_summary_path = outputs["base"] / f"{identifier}_top_models_summary.csv"
     top_rows.to_csv(top_summary_path, index=False)
 
-    with (outputs["base"] / "top_models_summary.json").open("w", encoding="utf-8") as fp:
+    with (outputs["base"] / f"{identifier}_top_models_summary.json").open(
+        "w", encoding="utf-8"
+    ) as fp:
         json.dump(top_rows.to_dict(orient="records"), fp, indent=2)
 
     for idx, ((_, leaderboard_row), model) in enumerate(zip(top_rows.iterrows(), models), start=1):
         model_label = str(leaderboard_row.get("Model", f"model_{idx}"))
         label_slug = slugify(model_label)
+        file_stem = f"{identifier}_{idx:02d}_{label_slug}"
         logging.info("Processing model #%d: %s", idx, model_label)
 
         finalized_model = exp.finalize_model(model)
@@ -302,7 +469,7 @@ def run_experiment(args: argparse.Namespace) -> None:
         else:
             forecast_series = forecast
 
-        prediction_path = outputs["predictions"] / f"{idx:02d}_{label_slug}_forecast.csv"
+        prediction_path = outputs["predictions"] / f"{file_stem}_forecast.csv"
         if isinstance(forecast, pd.DataFrame):
             forecast.to_csv(prediction_path, index=True)
         else:
@@ -314,27 +481,33 @@ def run_experiment(args: argparse.Namespace) -> None:
             "leaderboard_metrics": metrics,
             "forecast_descriptive_stats": forecast_stats,
         }
-        stats_path = outputs["metrics"] / f"{idx:02d}_{label_slug}_stats.json"
+        stats_path = outputs["metrics"] / f"{file_stem}_stats.json"
         with stats_path.open("w", encoding="utf-8") as fp:
             json.dump(combined_stats, fp, indent=2)
 
         fig = plot_forecast(
-            history=data,
+            history=train_series,
             forecast=forecast_series,
             model_label=model_label,
             metrics=metrics,
             forecast_stats=forecast_stats,
+            test=test_series,
         )
-        fig_path = outputs["plots"] / f"{idx:02d}_{label_slug}_forecast.png"
+        fig_path = outputs["plots"] / f"{file_stem}_forecast.png"
         fig.savefig(fig_path, dpi=200, bbox_inches="tight")
         plt.close(fig)
         logging.info("Saved forecast plot to %s", fig_path)
 
 
 def main():
-    configure_logging()
     args = parse_args()
-    run_experiment(args)
+    run_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    series_slug = slugify(args.yfinance_ticker or args.dataset_name or "series")
+    outputs = ensure_output_dirs(args.output_dir)
+    log_path = outputs["logs"] / f"{run_timestamp}_{series_slug}_run.log"
+    configure_logging(log_path)
+    logging.info("Starting experiment for '%s' with timestamp %s", series_slug, run_timestamp)
+    run_experiment(args, outputs, run_timestamp, series_slug)
 
 
 if __name__ == "__main__":

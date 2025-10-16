@@ -1,0 +1,29 @@
+Model,MASE,RMSSE,MAE,RMSE,MAPE,SMAPE,R2,TT (Sec)
+Exponential Smoothing,0.7349,0.8061,17.9991,22.1385,0.0574,0.059,0.7379,0.0333
+ARIMA,0.8027,0.8531,19.532,23.2748,0.0636,0.0657,0.6974,0.5567
+STLF,0.8047,0.8543,19.6169,23.3408,0.0639,0.0657,0.6985,0.0167
+Extra Trees w/ Cond. Deseasonalize & Detrending,0.8127,0.9287,20.293,25.8774,0.0631,0.0648,0.6731,0.2633
+Random Forest w/ Cond. Deseasonalize & Detrending,0.8593,1.0198,21.5854,28.7669,0.0655,0.0682,0.6168,0.27
+Ridge w/ Cond. Deseasonalize & Detrending,0.9042,1.0528,22.4872,29.3845,0.0709,0.0735,0.5785,0.23
+Linear w/ Cond. Deseasonalize & Detrending,0.9042,1.0527,22.4869,29.3839,0.0709,0.0735,0.5786,0.2267
+Elastic Net w/ Cond. Deseasonalize & Detrending,0.9048,1.0542,22.5038,29.4275,0.0708,0.0734,0.5777,0.2267
+Lasso Least Angular Regressor w/ Cond. Deseasonalize & Detrending,0.9062,1.0539,22.5397,29.4245,0.0709,0.0735,0.5781,0.2267
+Lasso w/ Cond. Deseasonalize & Detrending,0.9062,1.0539,22.5395,29.4245,0.0709,0.0735,0.5781,0.2267
+Bayesian Ridge w/ Cond. Deseasonalize & Detrending,0.9254,1.079,23.0195,30.1138,0.0725,0.0751,0.5554,0.2233
+Gradient Boosting w/ Cond. Deseasonalize & Detrending,0.9264,1.082,23.1895,30.4469,0.0707,0.0739,0.5654,0.1333
+Orthogonal Matching Pursuit w/ Cond. Deseasonalize & Detrending,0.9378,1.1283,23.7232,32.0807,0.0708,0.074,0.5363,0.1167
+AdaBoost w/ Cond. Deseasonalize & Detrending,0.9464,1.1171,23.8,31.5765,0.0716,0.0751,0.5422,0.1533
+Huber w/ Cond. Deseasonalize & Detrending,0.9469,1.1058,23.5417,30.8534,0.0743,0.077,0.5328,0.12
+K Neighbors w/ Cond. Deseasonalize & Detrending,0.9507,1.1219,23.9407,31.6249,0.0722,0.0755,0.5358,0.2467
+Auto ARIMA,0.9599,1.0397,23.3493,28.1796,0.0816,0.0803,0.4758,0.99
+TBATS,0.9635,1.0366,23.8529,28.6468,0.0835,0.0804,0.4616,4.77
+Decision Tree w/ Cond. Deseasonalize & Detrending,0.99,1.1066,25.107,31.6662,0.076,0.0796,0.5541,0.1167
+Theta Forecaster,1.0051,1.082,24.838,30.0789,0.0761,0.0806,0.5415,0.0133
+Light Gradient Boosting w/ Cond. Deseasonalize & Detrending,1.118,1.261,27.5443,34.7924,0.0895,0.0926,0.3307,0.2067
+ETS,1.1364,1.1986,27.4105,32.2292,0.0977,0.0944,0.1628,0.0367
+BATS,1.3679,1.4267,33.1532,38.8038,0.1101,0.1143,0.1387,1.3633
+Polynomial Trend Forecaster,1.4344,1.6994,36.4268,48.2507,0.1121,0.1174,-0.0737,0.55
+Seasonal Naive Forecaster,2.0007,1.9233,49.5417,53.13,0.161,0.1778,-0.4631,0.5433
+Croston,2.4276,2.7057,60.6582,75.8834,0.1844,0.2122,-1.7945,0.01
+Naive Forecaster,2.4703,2.7336,61.9861,76.9618,0.186,0.2143,-1.7848,0.68
+Grand Means Forecaster,4.6685,4.4883,119.2685,127.9552,0.3699,0.4633,-6.4743,0.54

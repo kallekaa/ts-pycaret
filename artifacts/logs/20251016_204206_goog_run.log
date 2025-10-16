@@ -1,0 +1,15 @@
+23:42:06 [INFO] Starting experiment for 'goog' with timestamp 20251016_204206
+23:42:06 [INFO] Downloading daily close prices for GOOG from Yahoo Finance.
+23:42:06 [INFO] Fetched 781 observations for the experiment.
+23:42:07 [INFO] Comparing models (MASE metric)...
+23:44:21 [INFO] Leaderboard written to artifacts\20251016_204206_goog_leaderboard.csv
+23:44:21 [INFO] Processing model #1: Gradient Boosting w/ Cond. Deseasonalize & Detrending
+23:44:22 [INFO] Saved forecast plot to artifacts\plots\20251016_204206_goog_01_gradient_boosting_w__cond__deseasonalize___detrending_forecast.png
+23:44:22 [INFO] Processing model #2: Random Forest w/ Cond. Deseasonalize & Detrending
+23:44:24 [INFO] Saved forecast plot to artifacts\plots\20251016_204206_goog_02_random_forest_w__cond__deseasonalize___detrending_forecast.png
+23:44:24 [INFO] Processing model #3: Light Gradient Boosting w/ Cond. Deseasonalize & Detrending
+23:44:25 [INFO] Saved forecast plot to artifacts\plots\20251016_204206_goog_03_light_gradient_boosting_w__cond__deseasonalize___detrending_forecast.png
+23:44:25 [INFO] Processing model #4: Auto ARIMA
+23:44:48 [INFO] Saved forecast plot to artifacts\plots\20251016_204206_goog_04_auto_arima_forecast.png
+23:44:48 [INFO] Processing model #5: Lasso Least Angular Regressor w/ Cond. Deseasonalize & Detrending
+23:44:49 [INFO] Saved forecast plot to artifacts\plots\20251016_204206_goog_05_lasso_least_angular_regressor_w__cond__deseasonalize___detrending_forecast.png

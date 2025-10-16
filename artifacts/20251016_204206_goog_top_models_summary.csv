@@ -1,0 +1,6 @@
+Model,MASE,RMSSE,MAE,RMSE,MAPE,SMAPE,R2,TT (Sec)
+Gradient Boosting w/ Cond. Deseasonalize & Detrending,0.8287,0.8184,6.9977,8.5817,0.0422,0.0415,-1.0284,0.32
+Random Forest w/ Cond. Deseasonalize & Detrending,0.9096,0.8613,7.6528,9.0058,0.046,0.0451,-1.1009,0.4633
+Light Gradient Boosting w/ Cond. Deseasonalize & Detrending,0.9225,0.8872,7.8432,9.3709,0.0471,0.0465,-2.1535,0.4333
+Auto ARIMA,0.9321,0.9207,7.8432,9.6301,0.047,0.0463,-1.3575,9.16
+Lasso Least Angular Regressor w/ Cond. Deseasonalize & Detrending,1.0153,0.9851,8.5145,10.2692,0.0509,0.0498,-1.67,0.3133

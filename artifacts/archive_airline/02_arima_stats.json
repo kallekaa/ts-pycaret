@@ -7,7 +7,7 @@
     "MAPE": 0.0636,
     "SMAPE": 0.0657,
     "R2": 0.6974,
-    "TT (Sec)": 0.5367
+    "TT (Sec)": 0.5567
   },
   "forecast_descriptive_stats": {
     "count": 24.0,

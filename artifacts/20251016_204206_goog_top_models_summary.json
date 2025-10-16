@@ -8,7 +8,7 @@
     "MAPE": 0.0422,
     "SMAPE": 0.0415,
     "R2": -1.0284,
-    "TT (Sec)": 0.3267
+    "TT (Sec)": 0.32
   },
   {
     "Model": "Random Forest w/ Cond. Deseasonalize & Detrending",
@@ -19,7 +19,7 @@
     "MAPE": 0.046,
     "SMAPE": 0.0451,
     "R2": -1.1009,
-    "TT (Sec)": 0.46
+    "TT (Sec)": 0.4633
   },
   {
     "Model": "Light Gradient Boosting w/ Cond. Deseasonalize & Detrending",
@@ -30,6 +30,28 @@
     "MAPE": 0.0471,
     "SMAPE": 0.0465,
     "R2": -2.1535,
-    "TT (Sec)": 0.41
+    "TT (Sec)": 0.4333
+  },
+  {
+    "Model": "Auto ARIMA",
+    "MASE": 0.9321,
+    "RMSSE": 0.9207,
+    "MAE": 7.8432,
+    "RMSE": 9.6301,
+    "MAPE": 0.047,
+    "SMAPE": 0.0463,
+    "R2": -1.3575,
+    "TT (Sec)": 9.16
+  },
+  {
+    "Model": "Lasso Least Angular Regressor w/ Cond. Deseasonalize & Detrending",
+    "MASE": 1.0153,
+    "RMSSE": 0.9851,
+    "MAE": 8.5145,
+    "RMSE": 10.2692,
+    "MAPE": 0.0509,
+    "SMAPE": 0.0498,
+    "R2": -1.67,
+    "TT (Sec)": 0.3133
   }
 ]
