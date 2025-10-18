@@ -1,0 +1,45 @@
+23:00:46 [INFO] Starting experiment for 'goog' with timestamp 20251018_200046
+23:00:46 [INFO] Downloading daily close prices for GOOG from Yahoo Finance.
+23:00:48 [INFO] Fetched 520 observations for the experiment.
+23:00:49 [INFO] Comparing models (MASE metric)...
+23:04:14 [INFO] Leaderboard written to artifacts\20251018_200046_goog_leaderboard.csv
+23:04:14 [INFO] Processing model #1: Croston
+23:04:14 [WARNING] Unable to generate test predictions for Croston.
+Traceback (most recent call last):
+  File "C:\CODING PROJECTS\ts-pycaret\main.py", line 486, in run_experiment
+    test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TSForecastingExperiment.predict_model() got an unexpected keyword argument 'data'
+23:04:14 [INFO] Saved forecast plot to artifacts\plots\20251018_200046_goog_01_croston_forecast.png
+23:04:14 [INFO] Processing model #2: Decision Tree w/ Cond. Deseasonalize & Detrending
+23:04:15 [WARNING] Unable to generate test predictions for Decision Tree w/ Cond. Deseasonalize & Detrending.
+Traceback (most recent call last):
+  File "C:\CODING PROJECTS\ts-pycaret\main.py", line 486, in run_experiment
+    test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TSForecastingExperiment.predict_model() got an unexpected keyword argument 'data'
+23:04:15 [INFO] Saved forecast plot to artifacts\plots\20251018_200046_goog_02_decision_tree_w__cond__deseasonalize___detrending_forecast.png
+23:04:15 [INFO] Processing model #3: TBATS
+23:04:49 [WARNING] Unable to generate test predictions for TBATS.
+Traceback (most recent call last):
+  File "C:\CODING PROJECTS\ts-pycaret\main.py", line 486, in run_experiment
+    test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TSForecastingExperiment.predict_model() got an unexpected keyword argument 'data'
+23:04:49 [INFO] Saved forecast plot to artifacts\plots\20251018_200046_goog_03_tbats_forecast.png
+23:04:49 [INFO] Processing model #4: Theta Forecaster
+23:04:49 [WARNING] Unable to generate test predictions for Theta Forecaster.
+Traceback (most recent call last):
+  File "C:\CODING PROJECTS\ts-pycaret\main.py", line 486, in run_experiment
+    test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TSForecastingExperiment.predict_model() got an unexpected keyword argument 'data'
+23:04:50 [INFO] Saved forecast plot to artifacts\plots\20251018_200046_goog_04_theta_forecaster_forecast.png
+23:04:50 [INFO] Processing model #5: Naive Forecaster
+23:04:50 [WARNING] Unable to generate test predictions for Naive Forecaster.
+Traceback (most recent call last):
+  File "C:\CODING PROJECTS\ts-pycaret\main.py", line 486, in run_experiment
+    test_pred_df = exp.predict_model(finalized_model, data=test_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TSForecastingExperiment.predict_model() got an unexpected keyword argument 'data'
+23:04:50 [INFO] Saved forecast plot to artifacts\plots\20251018_200046_goog_05_naive_forecaster_forecast.png
